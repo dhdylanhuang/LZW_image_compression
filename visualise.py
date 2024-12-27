@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Path to the .npz file
-npz_file_path = "S2A_2LMK_20170224_0_L2A.npz"
+npz_file_path = "S2B_60HXD_20170910_0_L2A.npz"
 
 # Load the .npz file
 data = np.load(npz_file_path)
