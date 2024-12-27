@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Path to the .npz file
-npz_file_path = "../sample/S2B_56HLH_20170729_0_L2A.npz"
+npz_file_path = "S2A_2LMK_20170224_0_L2A.npz"
 
 # Load the .npz file
 data = np.load(npz_file_path)
@@ -11,7 +11,12 @@ data = np.load(npz_file_path)
 for key in data.files:
     print(f"Key: {key}, Shape: {data[key].shape}, Data Type: {data[key].dtype}")
     
-# Mock data for demonstration (replace with actual data)
+    # Print out the data for inspection
+    for key in data.files:
+        print(f"Data for key: {key}")
+        print(data[key])
+        print("\n")
+    
 gsd_10 = data['gsd_10']
 scl = data['scl'] 
 gsd_60 = data['gsd_60']
