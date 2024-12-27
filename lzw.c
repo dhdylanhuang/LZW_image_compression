@@ -3,9 +3,9 @@
 #include <string.h>
 #include "lzw.h"
 
-#define MAX_DICT_SIZE 256  // For 8-bit codes
+#define MAX_DICT_SIZE 128  // For 8-bit codes
 #define INIT_DICT_SIZE 0
-#define CHUNK_SIZE 65536   // 64 KB chunk size
+#define CHUNK_SIZE 32768   // 32 KB chunk size
 
 typedef struct {
     int code;
