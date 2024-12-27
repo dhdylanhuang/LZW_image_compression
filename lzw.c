@@ -4,7 +4,7 @@
 #include "lzw.h"
 
 #define MAX_DICT_SIZE 4096 // For 12-bit codes
-#define INIT_DICT_SIZE 256
+#define INIT_DICT_SIZE 128
 
 typedef struct {
     int code;
