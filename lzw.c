@@ -87,11 +87,16 @@ void lzw_compress(const char *input_file, const char *output_file) {
         }
     }
 
+    // Write the dictionary size to the output file
+    fwrite(&dict_size, sizeof(int), 1, output);
+
     // Cleanup
     free(sequence);
     for (int i = 0; i < dict_size; i++) {
         free(dictionary[i].value);
     }
+
+
 
     fclose(input);
     fclose(output);
