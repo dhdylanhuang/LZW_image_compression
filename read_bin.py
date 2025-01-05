@@ -4,36 +4,35 @@ import sys
 
 def binary_to_npz(binary_file, npz_file):
     """
-    Reads a binary file and converts it to an .npz file with specified keys, shapes, and data types.
-
-    Args:
-        binary_file (str): Path to the input binary file.
-        npz_file (str): Path to the output .npz file.
-    """
-    # Define the structure of the output .npz file
-    data_structure = {
-        "gsd_10": {"shape": (192, 192, 4), "dtype": np.float32},
-        "gsd_20": {"shape": (96, 96, 6), "dtype": np.float32},
-        "gsd_60": {"shape": (32, 32, 2), "dtype": np.float32},
-        "scl": {"shape": (96, 96), "dtype": np.uint8},
-        "bad_percent": {"shape": (), "dtype": np.float64},
-    }
-
+    Converts a binary file with a key-index mapping back to an .npz file.
+    """    
     data_dict = {}
 
     with open(binary_file, 'rb') as bin_file:
-        for key, details in data_structure.items():
-            shape = details["shape"]
-            dtype = details["dtype"]
+        # Read number of keys
+        num_keys = struct.unpack('I', bin_file.read(4))[0]
 
-            # Calculate the number of elements in the array
+        # Read metadata
+        metadata = []
+        for _ in range(num_keys):
+            key_length = struct.unpack('I', bin_file.read(4))[0]
+            key = bin_file.read(key_length).decode('utf-8')
+
+            shape_length = struct.unpack('I', bin_file.read(4))[0]
+            shape = struct.unpack('I' * shape_length, bin_file.read(4 * shape_length))
+
+            dtype_length = struct.unpack('I', bin_file.read(4))[0]
+            dtype = bin_file.read(dtype_length).decode('utf-8')
+
+            metadata.append((key, shape, dtype))
+
+        # Read binary data
+        for key, shape, dtype in metadata:
             num_elements = np.prod(shape) if shape else 1
+            array = np.frombuffer(bin_file.read(num_elements * np.dtype(dtype).itemsize), dtype=dtype)
+            data_dict[key] = array.reshape(shape)
 
-            # Read the binary data and reshape
-            data = np.frombuffer(bin_file.read(num_elements * np.dtype(dtype).itemsize), dtype=dtype)
-            data_dict[key] = data if not shape else data.reshape(shape)
-
-    # Save the data to an .npz file
+    # Save to .npz
     np.savez(npz_file, **data_dict)
     print(f"Data successfully written to {npz_file}")
 
