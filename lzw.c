@@ -16,6 +16,10 @@ void lzw_compress(const char *input_file, const char *output_file) {
         exit(1);
     }
 
+    // Reserve space for the dictionary size at the beginning of the file
+    int placeholder = 0;
+    fwrite(&placeholder, sizeof(int), 1, output);
+
     // Initialize dictionary
     DictEntry dictionary[MAX_DICT_SIZE];
     int dict_size = INIT_DICT_SIZE;
@@ -87,7 +91,8 @@ void lzw_compress(const char *input_file, const char *output_file) {
         }
     }
 
-    // Write the dictionary size to the output file
+    // Go back and write the dictionary size at the start of the file
+    fseek(output, 0, SEEK_SET);
     fwrite(&dict_size, sizeof(int), 1, output);
 
     // Cleanup
@@ -96,9 +101,8 @@ void lzw_compress(const char *input_file, const char *output_file) {
         free(dictionary[i].value);
     }
 
-
-
     fclose(input);
     fclose(output);
     printf("Compression complete.\n");
 }
+
