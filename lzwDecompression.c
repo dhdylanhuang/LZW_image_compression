@@ -227,24 +227,9 @@ void lzw_decompress(const char *input_file, const char *output_file) {
             dict_size++;
         }
 
-        // If we allocated a temporary seq_data in KwKwK case, free it now
-        if (curr_code == dict_size - 1 /* was == old dict_size before increment */) {
-            // Actually, safer: free only when we explicitly malloc'ed (KwKwK path)
-            // We detect it by comparing pointer ownership:
-            // Here we used a different strategy: free if (curr_code >= original dict_size when entered)
-            // But since we can't easily know "original" here, track it via the branch:
-            // We know we malloc'ed seq_data only when curr_code == previous dict_size at the branch.
-            // So:
-            // No-op here; we already handled it above after writing. (Kept comment for clarity.)
-        }
-
         // Advance
         prev_code = curr_code;
 
-        // If we created a temporary buffer in KwKwK case, free it now (we already wrote and used first byte)
-        if (curr_code >= dict_size /* impossible after increment */) {
-            // no-op
-        }
     }
 
     free_dict(dictionary, dict_size);
