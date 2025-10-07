@@ -30,6 +30,13 @@ static int br_read_code(BitReader *br, int *out_code) {
             if (br->bit_count == 0) {
                 return 0; // no more codes
             }
+            uint32_t mask = (1u << br->bit_count) - 1u;
+            if ((br->buffer & mask) == 0) {
+                // Trailing padding bits (from encoder flush) — treat as end of stream.
+                br->buffer = 0;
+                br->bit_count = 0;
+                return 0;
+            }
             fprintf(stderr, "Unexpected end of compressed data.\n");
             exit(1);
         }
