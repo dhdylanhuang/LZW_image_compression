@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Path to the .npz file
-npz_file_path = "test.npz"
+npz_file_path = "decompressed.npz"
 
 # Load the .npz file
 data = np.load(npz_file_path)
