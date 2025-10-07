@@ -25,6 +25,45 @@ static int find_concat_code(DictEntry *dict, int dict_size,
     return -1;
 }
 
+typedef struct {
+    FILE    *stream;
+    uint32_t buffer;
+    int      bit_count;
+} BitWriter;
+
+static void bw_init(BitWriter *bw, FILE *stream) {
+    bw->stream = stream;
+    bw->buffer = 0;
+    bw->bit_count = 0;
+}
+
+static void bw_write_code(BitWriter *bw, int code) {
+    bw->buffer |= ((uint32_t)code & ((1u << CODE_BITS) - 1)) << bw->bit_count;
+    bw->bit_count += CODE_BITS;
+
+    while (bw->bit_count >= 8) {
+        uint8_t byte = (uint8_t)(bw->buffer & 0xFFu);
+        if (fwrite(&byte, 1, 1, bw->stream) != 1) {
+            fprintf(stderr, "Error writing compressed data.\n");
+            exit(1);
+        }
+        bw->buffer >>= 8;
+        bw->bit_count -= 8;
+    }
+}
+
+static void bw_flush(BitWriter *bw) {
+    if (bw->bit_count > 0) {
+        uint8_t byte = (uint8_t)(bw->buffer & 0xFFu);
+        if (fwrite(&byte, 1, 1, bw->stream) != 1) {
+            fprintf(stderr, "Error flushing compressed data.\n");
+            exit(1);
+        }
+        bw->buffer = 0;
+        bw->bit_count = 0;
+    }
+}
+
 void lzw_compress(const char *input_file, const char *output_file) {
     FILE *input  = fopen(input_file,  "rb");
     FILE *output = fopen(output_file, "wb");
@@ -39,6 +78,9 @@ void lzw_compress(const char *input_file, const char *output_file) {
     // write an int indicating the initial dictionary size (256).
     int init_dict_size = INIT_DICT_SIZE;
     fwrite(&init_dict_size, sizeof(int), 1, output);
+
+    BitWriter bw;
+    bw_init(&bw, output);
 
     // ---- Build initial dictionary (single-byte entries 0..255)
     DictEntry dictionary[MAX_DICT_SIZE];
@@ -85,7 +127,7 @@ void lzw_compress(const char *input_file, const char *output_file) {
         int nxt = fgetc(input);
         if (nxt == EOF) {
             // Emit final code
-            fwrite(&curr_code, sizeof(int), 1, output);
+            bw_write_code(&bw, curr_code);
             break;
         }
         uint8_t k = (uint8_t)(nxt & 0xFF);
@@ -97,7 +139,7 @@ void lzw_compress(const char *input_file, const char *output_file) {
             curr_code = found;
         } else {
             // Output code for W
-            fwrite(&curr_code, sizeof(int), 1, output);
+            bw_write_code(&bw, curr_code);
 
             // Add W+k to dictionary if space remains
             if (dict_size < MAX_DICT_SIZE) {
@@ -123,6 +165,8 @@ void lzw_compress(const char *input_file, const char *output_file) {
             curr_code = k;
         }
     }
+
+    bw_flush(&bw);
 
     // Cleanup
     for (int i = 0; i < dict_size; i++) {

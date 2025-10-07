@@ -11,6 +11,38 @@ typedef struct {
     size_t   len;    // number of bytes
 } DictEntry;
 
+typedef struct {
+    FILE    *stream;
+    uint32_t buffer;
+    int      bit_count;
+} BitReader;
+
+static void br_init(BitReader *br, FILE *stream) {
+    br->stream    = stream;
+    br->buffer    = 0;
+    br->bit_count = 0;
+}
+
+static int br_read_code(BitReader *br, int *out_code) {
+    while (br->bit_count < CODE_BITS) {
+        int byte = fgetc(br->stream);
+        if (byte == EOF) {
+            if (br->bit_count == 0) {
+                return 0; // no more codes
+            }
+            fprintf(stderr, "Unexpected end of compressed data.\n");
+            exit(1);
+        }
+        br->buffer |= ((uint32_t)(byte & 0xFFu)) << br->bit_count;
+        br->bit_count += 8;
+    }
+
+    *out_code = (int)(br->buffer & ((1u << CODE_BITS) - 1));
+    br->buffer >>= CODE_BITS;
+    br->bit_count -= CODE_BITS;
+    return 1;
+}
+
 // Safe helper to free dictionary
 static void free_dict(DictEntry *dict, int dict_size) {
     for (int i = 0; i < dict_size; i++) {
@@ -73,9 +105,12 @@ void lzw_decompress(const char *input_file, const char *output_file) {
         dict_size++;
     }
 
+    BitReader br;
+    br_init(&br, input);
+
     // --- Read the first code and output its bytes
     int prev_code;
-    if (fread(&prev_code, sizeof(int), 1, input) != 1) {
+    if (!br_read_code(&br, &prev_code)) {
         // Empty stream after header -> nothing to output
         free_dict(dictionary, dict_size);
         fclose(input);
@@ -102,7 +137,7 @@ void lzw_decompress(const char *input_file, const char *output_file) {
 
     // --- Main decode loop
     int curr_code;
-    while (fread(&curr_code, sizeof(int), 1, input) == 1) {
+    while (br_read_code(&br, &curr_code)) {
         uint8_t *seq_data = NULL;
         size_t   seq_len  = 0;
 
