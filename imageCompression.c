@@ -46,14 +46,14 @@ long get_file_size(const char *filename) {
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         printf("Error: Cannot open file %s\n", filename);
-        return 1;
+        return -1;
     }
 
     // Move to the end of the file
     if (fseek(file, 0, SEEK_END) != 0) {
         perror("Error: Cannot seek to the end of file\n");
         fclose(file);
-        return 1;
+        return -1;
     }
 
     // Get the size of the file
@@ -62,7 +62,7 @@ long get_file_size(const char *filename) {
     if (size == -1) {
         perror("Error getting file size");
         fclose(file);
-        return 1;
+        return -1;
     }
 
     fclose(file);
