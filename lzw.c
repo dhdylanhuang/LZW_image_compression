@@ -195,7 +195,6 @@ void lzw_compress(const char *input_file, const char *output_file) {
     size_t bytes_processed = 0;    
     size_t codes_written = 0;
     size_t total_bits_written = 0;
-    size_t hash_collisions = 0;
     size_t kwkwk_count = 0;
 
     // Initialize bit writer for compressed output
@@ -253,7 +252,6 @@ void lzw_compress(const char *input_file, const char *output_file) {
                 size_t start_count = ht_count;
                 ht_insert(mk_key(curr_code, k), dict_size);
                 if (ht_count > start_count) {
-                    ++hash_collisions;
                 }
                 
                 ++dict_size;
